@@ -27,25 +27,25 @@ The Code Quality Combined suite follows a clean separation of concerns:
 
 ## 📁 **File Organization**
 
+### **Current Project Structure**
 ```
 code-quality-suite/
 ├── 🔧 cq_set_config.py         # Step 1: Project configuration
 ├── 🚀 cq_run_analysis.py       # Step 2: Analysis execution  
 ├── 📁 helper_scripts/          # Individual analysis tools
+│   ├── __init__.py
 │   ├── code_metrics.py         # File structure analysis
-│   ├── docstring_coverage.py   # Documentation analysis
-│   ├── pylint_analysis.py      # Code quality analysis
-│   ├── unused_code.py          # Dead code detection
-│   ├── test_coverage.py        # Coverage analysis
-│   └── api_documentation.py    # API doc analysis
+│   ├── dockstring.py           # Documentation analysis  
+│   ├── pylint_check.py         # Code quality analysis
+│   ├── unused.py               # Dead code detection
+│   ├── test_covearge.py        # Coverage analysis
+│   ├── api_doc.py              # API doc analysis
+│   └── readability.py          # Code readability analysis
 ├── 📁 utils/                   # Shared utilities
 │   ├── __init__.py
-│   ├── config_manager.py       # Configuration handling
-│   ├── project_detector.py     # Auto-detection logic
-│   ├── file_finder.py          # File discovery
-│   └── report_generator.py     # Report management
+│   └── file_discovery.py       # File discovery utilities
 ├── 📋 cq_active_config.json    # Active project configuration
-├── 📊 cq_reports/              # Generated analysis reports
+├── 📊 cq_reports/              # Generated analysis reports (created at runtime)
 │   ├── analysis_summary.json   # Overall summary
 │   ├── code_metrics_report.json
 │   ├── docstring_report.json
@@ -54,6 +54,8 @@ code-quality-suite/
 │   ├── test_coverage_report.json
 │   └── api_doc_report.json
 ├── 📄 requirements.txt         # Core dependencies
+├── 📄 pyproject.toml          # Project configuration
+├── 📄 LICENSE                 # MIT License
 ├── 📖 README.md               # Main documentation
 ├── 📖 EXAMPLES.md             # Usage examples
 ├── ⚡ PERFORMANCE.md          # Performance guide
@@ -61,82 +63,50 @@ code-quality-suite/
 └── 🏗️ ARCHITECTURE.md        # This file
 ```
 
+**Note**: The `cq_reports/` directory is created automatically when you first run an analysis.
+
 ---
 
 ## 🔧 **Core Components**
 
-### **Configuration Manager (`utils/config_manager.py`)**
+### **Existing Components**
 
+#### **File Discovery (`utils/file_discovery.py`)**
 **Responsibilities:**
+- Discover Python files based on include/exclude patterns
+- Apply filtering rules consistently across tools
+- Handle project structure detection
+
+**Core Logic:**
+```python
+# Actual implementation exists in utils/file_discovery.py
+class FileFinder:
+    def find_python_files(project_path, include_dirs, exclude_patterns)
+    def apply_filters(files, patterns)
+    def is_python_file(file_path)
+```
+
+### **Components That Could Be Added**
+
+The following components would enhance the architecture but are not currently implemented:
+
+#### **Configuration Manager (Proposed: `utils/config_manager.py`)**
+**Would Handle:**
 - Load and save configuration from `cq_active_config.json`
 - Validate configuration parameters
 - Provide default values for missing settings
 
-**Key Methods:**
-```python
-class ConfigManager:
-    def load_config() -> dict
-    def save_config(config: dict) -> None
-    def validate_config(config: dict) -> bool
-    def get_default_config() -> dict
-```
-
-### **Project Detector (`utils/project_detector.py`)**
-
-**Responsibilities:**
+#### **Project Detector (Proposed: `utils/project_detector.py`)**
+**Would Handle:**
 - Auto-detect project type (Django, Flask, FastAPI, Generic)
 - Identify source directories automatically
 - Generate smart exclude patterns
 
-**Detection Logic:**
-```python
-class ProjectDetector:
-    def detect_project_type(project_path: str) -> str
-    def find_source_directories(project_path: str) -> List[str]
-    def generate_exclude_patterns(project_path: str) -> List[str]
-    def get_framework_specific_excludes(framework: str) -> List[str]
-```
-
-### **File Finder (`utils/file_finder.py`)**
-
-**Responsibilities:**
-- Discover Python files based on include/exclude patterns
-- Apply filtering rules consistently across tools
-- Handle symbolic links and permissions
-
-**Core Logic:**
-```python
-class FileFinder:
-    def find_python_files(
-        project_path: str, 
-        include_dirs: List[str], 
-        exclude_patterns: List[str]
-    ) -> List[str]
-    
-    def apply_filters(files: List[str], patterns: List[str]) -> List[str]
-    def is_python_file(file_path: str) -> bool
-```
-
-### **Report Generator (`utils/report_generator.py`)**
-
-**Responsibilities:**
+#### **Report Generator (Proposed: `utils/report_generator.py`)**
+**Would Handle:**
 - Standardize report format across all tools
 - Generate summary reports
 - Handle report persistence and metadata
-
-**Report Structure:**
-```python
-class ReportGenerator:
-    def create_tool_report(
-        tool_name: str,
-        status: str,
-        data: dict,
-        execution_time: float
-    ) -> dict
-    
-    def create_summary_report(tool_reports: List[dict]) -> dict
-    def save_report(report: dict, filename: str) -> None
-```
 
 ---
 
