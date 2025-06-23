@@ -236,7 +236,8 @@ def generate_overall_numeric_summary(config: dict):
             'pylint': config.get('pylint_output', 'pylint_report.json'),
             'test_coverage': config.get('test_coverage_output', 'test_coverage_report.json'),
             'docstrings': config.get('docstring_output', 'docstring_coverage_report.json'),
-            'code_metrics': config.get('code_metrics_output', 'code_metrics_report.json')
+            'code_metrics': config.get('code_metrics_output', 'code_metrics_report.json'),
+            'unused': config.get('unused_output', 'unused_code_report.json')
         }
         
         # Extract metrics from each tool
@@ -272,29 +273,16 @@ def generate_overall_numeric_summary(config: dict):
                         overall_summary["metrics"]["total_functions"] = summary.get("total_functions", 0)
                         overall_summary["metrics"]["total_classes"] = summary.get("total_classes", 0)
                         
+                    elif tool_name == 'unused':
+                        overall_summary["overall_scores"]["unused_items_count"] = tool_data.get("unused_items_count", 0)
+                        overall_summary["metrics"]["unused_total_files"] = tool_data.get("total_defined_files", 0)
+                        overall_summary["metrics"]["unused_items"] = tool_data.get("unused_items_count", 0)
+                        
                 except (json.JSONDecodeError, KeyError) as e:
                     print(f"⚠️ Warning: Could not parse {tool_name} report: {e}")
         
-        # Calculate composite scores
+        # Individual tool scores (no composite calculation)
         scores = overall_summary["overall_scores"]
-        composite_score = 0.0
-        score_components = 0
-        
-        if "pylint_score" in scores:
-            composite_score += scores["pylint_score"]
-            score_components += 1
-            
-        if "coverage_percentage" in scores:
-            composite_score += scores["coverage_percentage"] / 10  # Convert percentage to 0-10 scale
-            score_components += 1
-            
-        if "docstring_coverage" in scores:
-            composite_score += scores["docstring_coverage"] / 10  # Convert percentage to 0-10 scale
-            score_components += 1
-            
-        if score_components > 0:
-            overall_summary["overall_scores"]["composite_score"] = round(composite_score / score_components, 2)
-            overall_summary["overall_scores"]["composite_percentage"] = round((composite_score / score_components) * 10, 1)
         
         # Add analysis metadata
         overall_summary["analysis_date"] = datetime.now().isoformat()
@@ -310,14 +298,14 @@ def generate_overall_numeric_summary(config: dict):
         
         # Display key metrics
         print(f"\n📈 OVERALL NUMERIC SUMMARY:")
-        if "composite_score" in scores:
-            print(f"   🎯 Composite Score: {scores['composite_score']}/10 ({scores.get('composite_percentage', 0)}%)")
         if "pylint_score" in scores:
             print(f"   🔍 Pylint Score: {scores['pylint_score']}/10")
         if "coverage_percentage" in scores:
             print(f"   🧪 Test Coverage: {scores['coverage_percentage']}%")
         if "docstring_coverage" in scores:
             print(f"   📝 Docstring Coverage: {scores['docstring_coverage']}%")
+        if "unused_items_count" in scores:
+            print(f"   🧹 Unused Code Items: {scores['unused_items_count']}")
         
         return overall_summary
         

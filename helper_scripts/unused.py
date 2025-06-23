@@ -25,7 +25,7 @@ def run_vulture_analysis(config: Dict[str, Any]) -> Dict[str, Any]:
     :param config: Configuration dictionary containing analysis settings
     :return: Dictionary with vulture analysis results
     """
-    vulture_output = config.get("vulture_output", "unused_code_report.json")
+    vulture_output = config.get("unused_output", "unused_code_report.json")
     report_file = Path(config["report_dir"]) / vulture_output
 
     def run_vulture(files: List[str]) -> str:
@@ -38,6 +38,18 @@ def run_vulture_analysis(config: Dict[str, Any]) -> Dict[str, Any]:
         print(f"📊 Running vulture on {len(files)} Python files")
         # Use python -m vulture to ensure we use the current environment
         result = subprocess.run([sys.executable, "-m", "vulture", *files], capture_output=True, text=True)
+        
+        # Debug: Print raw output info
+        import os
+        print(f"      🔍 Vulture stdout length: {len(result.stdout)}")
+        print(f"      🔍 Vulture stderr: {result.stderr[:200] if result.stderr else 'None'}")
+        print(f"      🔍 Vulture return code: {result.returncode}")
+        print(f"      🔍 Working directory: {os.getcwd()}")
+        if result.stdout:
+            print(f"      🔍 First 200 chars of output: {result.stdout[:200]}")
+        else:
+            print(f"      🔍 No stdout output from vulture!")
+
         return result.stdout
 
     def parse_output(output: str) -> List[Dict[str, Any]]:

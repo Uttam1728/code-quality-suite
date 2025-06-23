@@ -190,3 +190,4 @@ cq_reports/*.html
 # Local configuration files (if any)
 config.local.py
 settings.local.py 
+reports/

@@ -28,10 +28,9 @@ def analyze_with_pylint(config: Dict[str, Any]) -> Dict[str, Any]:
         """
         # Use the venv2 python to ensure we have pylint available
         venv_python = "/Users/ushankradadiya/Downloads/repos/cerebrum/venv2/bin/python3"
+        # Run pylint in default text mode to get scores
         cmd = [
             venv_python, "-m", "pylint", 
-            "--output-format=json", 
-            "--score=no",  # Don't need score for individual files
             "--persistent=no",
             "--disable=import-error",  # Disable import errors that might cause contamination
             file_path
@@ -40,20 +39,20 @@ def analyze_with_pylint(config: Dict[str, Any]) -> Dict[str, Any]:
         # Run from current working directory (cerebrum) to maintain venv context
         result = subprocess.run(cmd, capture_output=True, text=True, cwd=os.getcwd())
         
-        # Parse JSON from stdout with contamination filtering
+        # Parse pylint text output for issues and score
         issues = []
-        try:
-            if result.stdout.strip():
-                # Try to extract JSON from potentially contaminated output
-                cleaned_output = extract_json_from_contaminated_output(result.stdout)
-                if cleaned_output:
-                    issues = json.loads(cleaned_output)
-        except json.JSONDecodeError:
-            # If JSON parsing still fails, try alternative extraction methods
-            issues = extract_issues_from_mixed_output(result.stdout)
+        score = None
+        
+        if result.stdout.strip():
+            # Extract pylint score from output
+            score = extract_pylint_score(result.stdout)
+            
+            # Extract issues from text output
+            issues = extract_issues_from_text_output(result.stdout)
         
         return {
             "issues": issues,
+            "score": score,
             "return_code": result.returncode,
             "file_path": file_path,
             "raw_stdout": result.stdout[:200] if result.stdout else "",  # Keep first 200 chars for debugging
@@ -70,6 +69,7 @@ def analyze_with_pylint(config: Dict[str, Any]) -> Dict[str, Any]:
         batch_issues = []
         batch_successful = 0
         batch_failed = []
+        batch_scores = []
         
         # Use ThreadPoolExecutor for I/O bound tasks
         with concurrent.futures.ThreadPoolExecutor(max_workers=8) as executor:
@@ -86,6 +86,12 @@ def analyze_with_pylint(config: Dict[str, Any]) -> Dict[str, Any]:
                     if result["return_code"] <= 31:  # Valid pylint return codes
                         if result["issues"]:  # If we extracted any issues
                             batch_issues.extend(result["issues"])
+                        if result.get("score") is not None:
+                            score = result["score"]
+                            if 0 <= score <= 10:
+                                batch_scores.append(score)
+                            else:
+                                print(f"      ⚠️ Invalid score {score} for {file_path} - skipping")
                         batch_successful += 1
                     else:
                         # Debug info for failed files
@@ -97,7 +103,7 @@ def analyze_with_pylint(config: Dict[str, Any]) -> Dict[str, Any]:
                     print(f"      ⚠️ Exception analyzing {file_path}: {str(e)}")
                     batch_failed.append(file_path)
         
-        return batch_issues, batch_successful, batch_failed
+        return batch_issues, batch_successful, batch_failed, batch_scores
     
     def calculate_overall_score(all_issues: List[Dict], files_count: int) -> float:
         """
@@ -132,7 +138,7 @@ def analyze_with_pylint(config: Dict[str, Any]) -> Dict[str, Any]:
         return {"error": "No Python files found."}
     
     # Get file limit from config or use default
-    file_limit = config.get("pylint_file_limit", 100)  # Default to 100 files
+    file_limit = config.get("pylint_file_limit", 1000)  # Default to 100 files
     
     # Limit files to avoid excessive processing time
     if len(files) > file_limit:
@@ -147,6 +153,7 @@ def analyze_with_pylint(config: Dict[str, Any]) -> Dict[str, Any]:
     all_issues = []
     total_successful = 0
     all_failed_files = []
+    all_scores = []
     
     # Split files into batches
     for i in range(0, len(files), batch_size):
@@ -157,17 +164,26 @@ def analyze_with_pylint(config: Dict[str, Any]) -> Dict[str, Any]:
         print(f"   📦 Processing batch {batch_num}/{total_batches} ({len(batch_files)} files)...")
         
         # Process the batch
-        batch_issues, batch_successful, batch_failed = process_batch(batch_files)
+        batch_issues, batch_successful, batch_failed, batch_scores = process_batch(batch_files)
         
         # Accumulate results
         all_issues.extend(batch_issues)
         total_successful += batch_successful
         all_failed_files.extend(batch_failed)
+        all_scores.extend(batch_scores)
         
         print(f"   ✅ Batch {batch_num} complete: {batch_successful} files analyzed, {len(batch_failed)} failed")
     
-    # Calculate overall score
-    estimated_score = calculate_overall_score(all_issues, total_successful)
+    # Calculate overall score from pylint scores
+    if all_scores and len(all_scores) > 0:
+        print(f"   📊 Found {len(all_scores)} valid individual scores")
+        overall_score = sum(all_scores) / len(all_scores)
+        overall_score = round(overall_score, 2)
+        print(f"   📊 Average pylint score: {overall_score}/10")
+    else:
+        print(f"   ⚠️ No valid pylint scores found, using estimated score based on issues")
+        # Fallback to estimated score if no pylint scores available
+        overall_score = calculate_overall_score(all_issues, total_successful)
     
     # Categorize issues by type
     issue_counts = {
@@ -186,11 +202,13 @@ def analyze_with_pylint(config: Dict[str, Any]) -> Dict[str, Any]:
     result = {
         "issues": all_issues,
         "issue_counts": issue_counts,
-        "score": estimated_score,
+        "score": overall_score,
+        "percentage": round(overall_score * 10, 1),  # Convert pylint score to percentage (0-10 → 0-100)
         "total_issues": len(all_issues),
         "files_analyzed": total_successful,
         "failed_files": all_failed_files,
-        "analysis_method": "batch_processing",
+        "individual_scores": all_scores,
+        "analysis_method": "batch_processing_with_pylint_scores",
         "batch_size": batch_size
     }
     
@@ -201,10 +219,11 @@ def analyze_with_pylint(config: Dict[str, Any]) -> Dict[str, Any]:
     
     # Display results
     score = result.get("score", "N/A")
+    percentage = result.get("percentage", "N/A")
     total_issues = result.get("total_issues", 0)
     issue_counts = result.get("issue_counts", {})
     
-    print(f"✅ Pylint complete. Score: {score}/10, Issues: {total_issues}")
+    print(f"✅ Pylint complete. Score: {score}/10 ({percentage}%), Issues: {total_issues}")
     if total_issues > 0 and issue_counts:
         print(f"   📊 Issue breakdown:")
         for issue_type, count in issue_counts.items():
@@ -213,6 +232,9 @@ def analyze_with_pylint(config: Dict[str, Any]) -> Dict[str, Any]:
     
     if all_failed_files:
         print(f"   ⚠️ Failed to analyze {len(all_failed_files)} files")
+    
+    if all_scores:
+        print(f"   📈 Analyzed {len(all_scores)} files with individual scores")
     
     return result 
 
@@ -272,6 +294,85 @@ def extract_json_from_contaminated_output(output: str) -> str:
             continue
     
     return ""
+
+def extract_pylint_score(output: str) -> float:
+    """
+    Extract pylint score from output.
+    
+    :param output: Raw pylint output
+    :return: Score as float (out of 10) or None if not found
+    """
+    if not output:
+        return None
+    
+    import re
+    
+    # Look for pattern like "Your code has been rated at 8.75/10"
+    score_pattern = r'Your code has been rated at ([\d\.-]+)/10'
+    match = re.search(score_pattern, output)
+    
+    if match:
+        try:
+            score = float(match.group(1))
+            # Validate score is reasonable (0-10 for pylint)
+            if 0 <= score <= 10:
+                return score
+            else:
+                print(f"      ⚠️ Invalid pylint score detected: {score}/10 - skipping")
+                return None
+        except ValueError:
+            print(f"      ⚠️ Could not convert score to float: {match.group(1)}")
+            pass
+    
+    return None
+
+def extract_issues_from_text_output(output: str) -> List[Dict]:
+    """
+    Extract pylint issues from text output format.
+    
+    :param output: Raw pylint text output
+    :return: List of issue dictionaries
+    """
+    issues = []
+    
+    if not output:
+        return issues
+    
+    import re
+    
+    # Pattern for pylint messages in text format:
+    # file_path:line:column: message_type: message (symbol_name)
+    message_pattern = r'([^:]+):(\d+):(\d+):\s*([CRWEF]\d+):\s*(.+?)\s*\(([^)]+)\)'
+    
+    for line in output.split('\n'):
+        match = re.match(message_pattern, line.strip())
+        if match:
+            file_path, line_num, col_num, msg_id, message, symbol = match.groups()
+            
+            # Map pylint message types
+            type_map = {
+                'C': 'convention',
+                'R': 'refactor', 
+                'W': 'warning',
+                'E': 'error',
+                'F': 'fatal'
+            }
+            
+            issue_type = type_map.get(msg_id[0], 'unknown')
+            
+            issues.append({
+                "type": issue_type,
+                "module": file_path,
+                "obj": "",
+                "line": int(line_num),
+                "column": int(col_num),
+                "path": file_path,
+                "symbol": symbol,
+                "message": message.strip(),
+                "message-id": msg_id
+            })
+    
+    return issues
 
 def extract_issues_from_mixed_output(output: str) -> List[Dict]:
     """
