@@ -58,7 +58,7 @@ def run_tests_with_coverage(config):
 
     try:
         # Use the venv2 python to ensure we have coverage available
-        venv_python = "/Users/ushankradadiya/Downloads/repos/cerebrum/venv2/bin/python3"
+        venv_python = "/Users/piyushtyagi/Desktop/Repository/code-quality-suite/venv/bin/python3"
         
         # Run tests with coverage
         print("   📊 Executing test suite...")

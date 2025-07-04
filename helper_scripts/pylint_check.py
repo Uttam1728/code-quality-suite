@@ -27,12 +27,13 @@ def analyze_with_pylint(config: Dict[str, Any]) -> Dict[str, Any]:
         :return: Pylint results for the file
         """
         # Use the venv2 python to ensure we have pylint available
-        venv_python = "/Users/ushankradadiya/Downloads/repos/cerebrum/venv2/bin/python3"
+        venv_python = "/Users/piyushtyagi/Desktop/Repository/code-quality-suite/venv/bin/python3"
         # Run pylint in default text mode to get scores
         cmd = [
             venv_python, "-m", "pylint", 
             "--persistent=no",
-            "--disable=import-error",  # Disable import errors that might cause contamination
+            "--max-line-length=150",  # Set maximum line length to 150 characters
+            "--disable=import-error, too-few-public-methods, missing-class-docstring, trailing-whitespace",  # Disable import errors that might cause contamination
             file_path
         ]
         

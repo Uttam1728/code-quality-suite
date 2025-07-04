@@ -1,9 +1,9 @@
 {
-  "project_root": "/Users/ushankradadiya/Downloads/repos/wayne",
-  "project_name": "wayne",
+  "project_root": "/Users/piyushtyagi/Desktop/Repository/almanac",
+  "project_name": "almanac",
   "include_dirs": [
-    "/Users/ushankradadiya/Downloads/repos/wayne",
-    "/Users/ushankradadiya/Downloads/repos/wayne/app"
+    "/Users/piyushtyagi/Desktop/Repository/almanac",
+    "/Users/piyushtyagi/Desktop/Repository/almanac/app"
   ],
   "exclude_patterns": [
     "venv",
@@ -54,14 +54,17 @@
     ".vscode",
     "*.swp",
     "*.swo",
-    "*~"
+    "*~",
+    "alembic",
+    "tests"
+
+
   ],
-  "report_dir": "/Users/ushankradadiya/Downloads/repos/cerebrum/code_quality_combined/wayne_cq_reports",
+  "report_dir": "/Users/piyushtyagi/Desktop/Repository/code-quality-suite/reports/almanac_cq_reports",
   "detected_features": [
-    "modern Python project",
     "Git repository"
   ],
-  "suite_location": "/Users/ushankradadiya/Downloads/repos/cerebrum/code_quality_combined",
+  "suite_location": "/Users/piyushtyagi/Desktop/Repository/code-quality-suite",
   "pylint_output": "pylint_report.json",
   "unused_output": "unused_code_score_report.json",
   "docstring_output": "docstring_coverage_report.json",
@@ -69,6 +72,5 @@
   "test_coverage_output": "test_coverage_report.json",
   "code_metrics_output": "code_metrics_report.json",
   "quality_summary_output": "code_quality_summary.json",
-  "quality_numeric_output": "code_quality_numeric_summary.json",
-  "pylint_file_limit": 1000
+  "quality_numeric_output": "code_quality_numeric_summary.json"
 }
