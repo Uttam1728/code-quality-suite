@@ -3,6 +3,15 @@ from pathlib import Path
 
 def analyze_openapi_coverage(config):
     # Try to find OpenAPI specification file
+    """Analyze OpenAPI specification coverage within a project.
+    Parameters:
+        - config (dict): Configuration dictionary containing paths such as 'project_root', 'report_dir', 'api_doc_output', and optionally 'openapi_path'.
+    Returns:
+        - dict: A dictionary containing coverage statistics including 'total_endpoints', 'documented', 'undocumented', 'coverage_percent', and details of 'undocumented_endpoints'.
+    Processing Logic:
+        - Attempts to locate the OpenAPI specification file using provided or common filenames within the project root.
+        - Reads the OpenAPI specification, choosing appropriate parsing method based on file extension (JSON or YAML).
+        - Computes documentation coverage by checking 'summary' or 'description' presence for each endpoint method."""
     openapi_path = config.get("openapi_path")
     if not openapi_path:
         # Look for common OpenAPI file names in project root
