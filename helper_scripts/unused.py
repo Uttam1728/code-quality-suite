@@ -77,7 +77,7 @@ def run_vulture_analysis(config: Dict[str, Any]) -> Dict[str, Any]:
         return {"error": "No Python files found."}
         
     output = run_vulture(files)
-    unused_items = []
+    unused_items = parse_output(output)
 
     result = {
         "total_defined_files": len(files),
