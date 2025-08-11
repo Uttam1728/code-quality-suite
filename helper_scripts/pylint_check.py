@@ -27,7 +27,7 @@ def analyze_with_pylint(config: Dict[str, Any]) -> Dict[str, Any]:
         :return: Pylint results for the file
         """
         # Use the venv2 python to ensure we have pylint available
-        venv_python = "/Users/ushankradadiya/Downloads/repos/cerebrum/venv2/bin/python3"
+        venv_python = "/Users/piyushtyagi/Desktop/Repository/event-queue/.venv/bin/python3"
         # Run pylint in default text mode to get scores
         cmd = [
             venv_python, "-m", "pylint", 

@@ -57,23 +57,96 @@ def run_tests_with_coverage(config):
     print(f"🧪 Running tests with coverage in: {test_dir}")
 
     try:
-        # Use the venv2 python to ensure we have coverage available
-        venv_python = "/Users/ushankradadiya/Downloads/repos/cerebrum/venv2/bin/python3"
+        # Dynamically find the correct Python executable in virtual environment
+        project_root = Path(config["project_root"])
+        
+        # Look for common virtual environment patterns
+        venv_candidates = [
+            project_root / ".venv" / "bin" / "python",
+            project_root / ".venv" / "bin" / "python3", 
+            project_root / "venv" / "bin" / "python",
+            project_root / "venv" / "bin" / "python3",
+            project_root / "venv2bin" / "python3",  # Keep old path as fallback
+            project_root / ".virtualenv" / "bin" / "python",
+        ]
+        
+        venv_python = None
+        for candidate in venv_candidates:
+            if candidate.exists():
+                venv_python = str(candidate)
+                print(f"   🐍 Using Python from: {venv_python}")
+                break
+        
+        if not venv_python:
+            # Fall back to system python3
+            venv_python = "python3"
+            print(f"   ⚠️  No virtual environment found, using system python3")
         
         # Run tests with coverage
         print("   📊 Executing test suite...")
-        result = subprocess.run(
-            [venv_python, "-m", "coverage", "run", "--source=.", "-m", "pytest", test_dir, "-v"],
-            capture_output=True,
-            text=True,
-        )
+        
+        # Check if we have test subdirectories that might have naming conflicts
+        test_path = Path(test_dir)
+        subdirs = [d for d in test_path.iterdir() if d.is_dir() and not d.name.startswith('.')]
+        
+        coverage_files = []
+        
+        if subdirs:
+            # Run tests by subdirectory to avoid naming conflicts
+            print(f"   🔍 Found {len(subdirs)} test subdirectories, running separately to avoid conflicts...")
+            
+            for i, subdir in enumerate(subdirs):
+                print(f"   📁 Running tests in {subdir.name} ({i+1}/{len(subdirs)})...")
+                
+                # Use separate coverage file for each subdirectory
+                coverage_file = f".coverage.{subdir.name}"
+                
+                result = subprocess.run(
+                    [venv_python, "-m", "coverage", "run", "--source=.", f"--data-file={coverage_file}", 
+                     "-m", "pytest", str(subdir), "-v"],
+                    capture_output=True,
+                    text=True,
+                    cwd=config["project_root"]
+                )
+                
+                # Check if this subdirectory had any tests
+                if "collected 0 items" not in result.stdout and result.returncode != 5:  # 5 = no tests collected
+                    coverage_files.append(coverage_file)
+                    print(f"   ✅ {subdir.name}: Coverage data collected")
+                else:
+                    print(f"   ⚠️  {subdir.name}: No tests found or collection failed")
+            
+            if coverage_files:
+                # Combine coverage data from all subdirectories
+                print("   🔄 Combining coverage data from all test directories...")
+                combine_cmd = [venv_python, "-m", "coverage", "combine"] + coverage_files
+                subprocess.run(combine_cmd, cwd=config["project_root"])
+                
+                # Clean up individual coverage files
+                for cf in coverage_files:
+                    try:
+                        os.remove(os.path.join(config["project_root"], cf))
+                    except:
+                        pass
+            else:
+                print("   ⚠️ No coverage data collected from any test directory")
+                return {"coverage_percent": 0.0, "tests_found": 0}
+                
+        else:
+            # Run tests normally if no subdirectories
+            result = subprocess.run(
+                [venv_python, "-m", "coverage", "run", "--source=.", "-m", "pytest", test_dir, "-v"],
+                capture_output=True,
+                text=True,
+                cwd=config["project_root"]
+            )
+            
+            if "collected 0 items" in result.stdout:
+                print("⚠️ No tests were collected. Skipping coverage report.")
+                return {"coverage_percent": 0.0, "tests_found": 0}
 
         print(f"   📋 Test execution completed")
         
-        if "collected 0 items" in result.stdout:
-            print("⚠️ No tests were collected. Skipping coverage report.")
-            return {"coverage_percent": 0.0, "tests_found": 0}
-
         # Generate XML coverage report
         print("   📄 Generating XML coverage report...")
         subprocess.run([venv_python, "-m", "coverage", "xml", "-o", str(coverage_xml)], check=True)

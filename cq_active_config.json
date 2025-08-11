@@ -1,9 +1,9 @@
 {
-  "project_root": "/Users/ushankradadiya/Downloads/repos/wayne",
-  "project_name": "wayne",
+  "project_root": "/Users/piyushtyagi/Desktop/Repository/event-queue",
+  "project_name": "event-queue",
   "include_dirs": [
-    "/Users/ushankradadiya/Downloads/repos/wayne",
-    "/Users/ushankradadiya/Downloads/repos/wayne/app"
+    "/Users/piyushtyagi/Desktop/Repository/event-queue",
+    "/Users/piyushtyagi/Desktop/Repository/event-queue/app"
   ],
   "exclude_patterns": [
     "venv",
@@ -56,12 +56,12 @@
     "*.swo",
     "*~"
   ],
-  "report_dir": "/Users/ushankradadiya/Downloads/repos/cerebrum/code_quality_combined/wayne_cq_reports",
+  "report_dir": "/Users/piyushtyagi/Desktop/Repository/event-queue/code_quality_combined/event-queue_cq_reports",
   "detected_features": [
     "modern Python project",
     "Git repository"
   ],
-  "suite_location": "/Users/ushankradadiya/Downloads/repos/cerebrum/code_quality_combined",
+  "suite_location": "/Users/piyushtyagi/Desktop/Repository/event-queue/code_quality_combined",
   "pylint_output": "pylint_report.json",
   "unused_output": "unused_code_score_report.json",
   "docstring_output": "docstring_coverage_report.json",
