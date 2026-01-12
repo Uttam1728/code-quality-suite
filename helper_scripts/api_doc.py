@@ -3,6 +3,29 @@ from pathlib import Path
 
 def analyze_openapi_coverage(config):
     # Try to find OpenAPI specification file
+    """Analyze coverage of OpenAPI documentation.
+    Parameters:
+        - config (dict): A configuration dictionary containing paths and file names, with keys:
+            - "openapi_path" (str, optional): Path to OpenAPI specification file. If not provided, the function will attempt to find it in the project root.
+            - "project_root" (str): Path to the project root directory to search for OpenAPI specification files if not directly provided.
+            - "report_dir" (str): Directory path to save the coverage report.
+            - "api_doc_output" (str): Filename for saving the API documentation report.
+    Returns:
+        - dict: A dictionary containing analysis results, with keys as follows:
+            - "total_endpoints" (int): Total number of endpoints discovered from the OpenAPI specification.
+            - "documented" (int): Number of endpoints documented with a summary or description.
+            - "undocumented" (int): Number of endpoints lacking sufficient documentation.
+            - "coverage_percent" (float): Percentage of documented endpoints.
+            - "undocumented_endpoints" (list of dict): List containing details of undocumented endpoints, each with:
+                - "path" (str): Endpoint path.
+                - "method" (str): HTTP method.
+                - "operationId" (str, optional): Operation ID, if available.
+    Processing Logic:
+        - Attempts to locate the OpenAPI specification file using a predefined list of filenames in the project root directory.
+        - Reads and parses the OpenAPI specification file using either YAML or JSON format, depending on the file extension.
+        - Analyzes each endpoint for the presence of summary or description to evaluate documentation coverage.
+        - Generates a JSON report of the documentation coverage results, and saves it to a specified directory and file.
+        - Outputs results and coverage percentage to the console."""
     openapi_path = config.get("openapi_path")
     if not openapi_path:
         # Look for common OpenAPI file names in project root
