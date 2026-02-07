@@ -41,7 +41,7 @@ def should_exclude_dir(path: Path, exclude_patterns: List[str]) -> bool:
         if pattern in venv_patterns:
             # Check if any part of the path contains this virtual env pattern
             for part in path_parts:
-                if part == pattern or part.startswith(pattern + '_') or part.endswith('_' + pattern):
+                if part == pattern or part.startswith(f'{pattern}_') or part.endswith(f'_{pattern}'):
                     return True
         
         # General substring check for patterns in path
